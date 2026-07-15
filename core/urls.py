@@ -23,4 +23,7 @@ router.register(r'reports', views.ReportViewSet, basename='reports')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('students/me/', views.StudentMeView.as_view(), name='student-me'),
+    path('teachers/me/', views.TeacherMeView.as_view(), name='teacher-me'),
+
 ]

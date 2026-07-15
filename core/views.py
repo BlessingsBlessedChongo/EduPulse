@@ -1,10 +1,11 @@
 from email import message
 import io
 import csv
+from datetime import timedelta
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from openpyxl import Workbook
-from rest_framework import viewsets, permissions, status, serializers as drf_serializers
+from rest_framework import viewsets, permissions, status, serializers as drf_serializers, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
@@ -13,9 +14,6 @@ from django.db import transaction
 from django.db.models import Avg, Count, Q
 from django.utils.dateparse import parse_date
 from django.http import HttpResponse
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework import status
 from accounts import models
 from .models import (
     StudentProfile, TeacherProfile, ParentProfile,
@@ -51,6 +49,7 @@ def award_xp(student_user, amount):
         return
     profile.add_xp(amount)
     check_and_award_achievements(profile)
+
 
 def check_and_award_achievements(profile):
     achievements = Achievement.objects.all()
@@ -121,6 +120,7 @@ class ParentProfileViewSet(viewsets.ModelViewSet):
         elif user.role == 'ADMIN':
             return ParentProfile.objects.all()
         return ParentProfile.objects.none()
+
     @action(detail=False, methods=['get'], url_path='my-children')
     def my_children(self, request):
         if request.user.role != 'PARENT':
@@ -130,17 +130,29 @@ class ParentProfileViewSet(viewsets.ModelViewSet):
         data = []
         for child in children:
             # recent grades
-            recent_subs = Submission.objects.filter(student=child, grade__isnull=False).order_by('-submitted_at')[:5]
-            grades = [{'assignment': s.assignment.title, 'grade': s.grade, 'date': s.submitted_at.strftime('%Y-%m-%d')} for s in recent_subs]
+            recent_subs = Submission.objects.filter(
+                student=child, grade__isnull=False
+            ).order_by('-submitted_at')[:5]
+            grades = [{
+                'assignment': s.assignment.title,
+                'grade': s.grade,
+                'date': s.submitted_at.strftime('%Y-%m-%d')
+            } for s in recent_subs]
             # attendance last 30 days
             thirty_days_ago = timezone.now().date() - timedelta(days=30)
             att = Attendance.objects.filter(student=child, date__gte=thirty_days_ago)
             present = att.filter(status='present').count()
             total = att.count()
-            attendance_rate = (present/total*100) if total > 0 else 100.0
+            attendance_rate = (present / total * 100) if total > 0 else 100.0
             # upcoming assignments
-            upcoming = Assignment.objects.filter(class_obj__enrollments__student=child, due_date__gte=timezone.now()).order_by('due_date')[:5]
-            assignments = [{'title': a.title, 'due_date': a.due_date.strftime('%Y-%m-%d')} for a in upcoming]
+            upcoming = Assignment.objects.filter(
+                class_obj__enrollments__student=child,
+                due_date__gte=timezone.now()
+            ).order_by('due_date')[:5]
+            assignments = [{
+                'title': a.title,
+                'due_date': a.due_date.strftime('%Y-%m-%d')
+            } for a in upcoming]
             data.append({
                 'student_id': child.id,
                 'student_name': child.user.get_full_name(),
@@ -149,6 +161,7 @@ class ParentProfileViewSet(viewsets.ModelViewSet):
                 'upcoming_assignments': assignments,
             })
         return Response(data)
+
 
 # ---------- CLASSES ----------
 
@@ -162,6 +175,19 @@ class ClassViewSet(viewsets.ModelViewSet):
         else:
             permission_classes = [IsAdmin]
         return [perm() for perm in permission_classes]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = Class.objects.all()
+        if user.role == 'TEACHER' and self.request.query_params.get('my') == 'true':
+            teacher = TeacherProfile.objects.get(user=user)
+            return qs.filter(teacher=teacher)
+        if user.role == 'STUDENT' and self.request.query_params.get('enrolled') == 'true':
+            student = StudentProfile.objects.get(user=user)
+            return qs.filter(enrollments__student=student)
+        # For teachers, they may want to see their own classes? Not explicitly requested, keep all for now
+        # Admins see all
+        return qs
 
     def perform_create(self, serializer):
         serializer.save()
@@ -208,6 +234,18 @@ class ClassViewSet(viewsets.ModelViewSet):
                 "submission_count": submissions.count()
             })
         return Response(data)
+    
+    @action(detail=True, methods=['get'], permission_classes=[IsTeacherOrAdmin])
+    def students(self, request, pk=None):
+        class_obj = self.get_object()
+        enrollments = class_obj.enrollments.select_related('student')
+        data = [{
+            'id': enrollment.student.id,
+            'name': enrollment.student.user.get_full_name(),
+            'email': enrollment.student.user.email,
+            'grade_level': enrollment.student.grade_level,
+        } for enrollment in enrollments]
+        return Response(data)
 
 
 # ---------- ENROLLMENT ----------
@@ -238,6 +276,25 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         else:
             permission_classes = [IsTeacher | IsAdmin]
         return [perm() for perm in permission_classes]
+
+    def get_queryset(self):
+        qs = Assignment.objects.all()
+        user = self.request.user
+        class_id = self.request.query_params.get('class_id')
+        upcoming = self.request.query_params.get('upcoming')
+
+        if class_id:
+            qs = qs.filter(class_obj_id=class_id)
+
+        if user.role == 'STUDENT':
+            # Only assignments for classes the student is enrolled in
+            student = StudentProfile.objects.get(user=user)
+            qs = qs.filter(class_obj__enrollments__student=student)
+
+        if upcoming == 'true':
+            qs = qs.filter(due_date__gte=timezone.now()).order_by('due_date')
+
+        return qs
 
     def perform_create(self, serializer):
         class_obj = serializer.validated_data['class_obj']
@@ -295,6 +352,17 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             award_xp(submission.student.user, xp)
 
         return Response(SubmissionSerializer(submission).data)
+    @action(detail=False, methods=['get'], url_path='pending')
+    def pending(self, request):
+        if request.user.role != 'TEACHER':
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        teacher = TeacherProfile.objects.get(user=request.user)
+        pending_subs = Submission.objects.filter(
+            assignment__class_obj__teacher=teacher,
+            grade__isnull=True
+        ).select_related('student', 'assignment')
+        serializer = self.get_serializer(pending_subs, many=True)
+        return Response(serializer.data)
 
 
 # ---------- ATTENDANCE ----------
@@ -321,6 +389,23 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         # Award XP for being present
         if attendance.status == 'present':
             award_xp(attendance.student.user, 5)
+    
+    def get_queryset(self):
+        qs = Attendance.objects.all()
+        student_id = self.request.query_params.get('student_id')
+        if student_id:
+            qs = qs.filter(student_id=student_id)
+        # role-based restrictions
+        user = self.request.user
+        if user.role == 'STUDENT':
+            qs = qs.filter(student__user=user)
+        elif user.role == 'PARENT':
+            parent = ParentProfile.objects.get(user=user)
+            qs = qs.filter(student__in=parent.children.all())
+        elif user.role == 'TEACHER':
+            teacher = TeacherProfile.objects.get(user=user)
+            qs = qs.filter(class_obj__teacher=teacher)
+        return qs
 
 
 # ---------- MESSAGES ----------
@@ -482,6 +567,13 @@ class GamificationViewSet(viewsets.ReadOnlyModelViewSet):
             for profile in top
         ]
         return Response(data)
+    @action(detail=False, methods=['get'], url_path='my_profile')
+    def my_profile(self, request):
+        if request.user.role != 'STUDENT':
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        profile = get_object_or_404(GamificationProfile, student__user=request.user)
+        serializer = self.get_serializer(profile)
+        return Response(serializer.data)
 
 
 # ---------- ACHIEVEMENTS ----------
@@ -512,6 +604,9 @@ class StudentAchievementViewSet(viewsets.ReadOnlyModelViewSet):
             return StudentAchievement.objects.filter(student__in=parent.children.all())
         return StudentAchievement.objects.all()
 
+
+# ---------- ANALYTICS ----------
+
 class AnalyticsViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -527,8 +622,6 @@ class AnalyticsViewSet(viewsets.GenericViewSet):
             'attendance_rate': None,
             'average_grade': None,
         }
-        # Attendance rate across all students (last 30 days)
-        from datetime import timedelta
         today = timezone.now().date()
         thirty_days_ago = today - timedelta(days=30)
         attendances = Attendance.objects.filter(date__gte=thirty_days_ago)
@@ -536,7 +629,6 @@ class AnalyticsViewSet(viewsets.GenericViewSet):
         if total > 0:
             presents = attendances.filter(status='present').count()
             data['attendance_rate'] = round(presents / total * 100, 2)
-        # Average grade across all graded submissions
         avg_grade = Submission.objects.filter(grade__isnull=False).aggregate(Avg('grade'))['grade__avg']
         if avg_grade is not None:
             data['average_grade'] = round(avg_grade, 2)
@@ -548,12 +640,13 @@ class AnalyticsViewSet(viewsets.GenericViewSet):
         class_obj = get_object_or_404(Class, pk=class_id)
         if request.user.role not in ['TEACHER', 'ADMIN']:
             return Response(status=status.HTTP_403_FORBIDDEN)
-        # optional: check if teacher owns the class
         enrollments = class_obj.enrollments.all()
         students_data = []
         for enrollment in enrollments:
             student = enrollment.student
-            submissions = Submission.objects.filter(student=student, assignment__class_obj=class_obj, grade__isnull=False)
+            submissions = Submission.objects.filter(
+                student=student, assignment__class_obj=class_obj, grade__isnull=False
+            )
             avg = submissions.aggregate(Avg('grade'))['grade__avg']
             students_data.append({
                 'student_id': student.id,
@@ -561,7 +654,9 @@ class AnalyticsViewSet(viewsets.GenericViewSet):
                 'average_grade': round(avg, 2) if avg else None,
                 'submission_count': submissions.count()
             })
-        class_avg = Submission.objects.filter(assignment__class_obj=class_obj, grade__isnull=False).aggregate(Avg('grade'))['grade__avg']
+        class_avg = Submission.objects.filter(
+            assignment__class_obj=class_obj, grade__isnull=False
+        ).aggregate(Avg('grade'))['grade__avg']
         return Response({
             'class': ClassSerializer(class_obj).data,
             'class_average': round(class_avg, 2) if class_avg else None,
@@ -573,23 +668,24 @@ class AnalyticsViewSet(viewsets.GenericViewSet):
         """Student/Teacher/Parent: grades over time, attendance rate, risk."""
         student = get_object_or_404(StudentProfile, pk=student_id)
         user = request.user
-        # Permission: student themselves, their parent, teacher, or admin
         if user.role == 'STUDENT' and student.user != user:
             return Response(status=status.HTTP_403_FORBIDDEN)
         if user.role == 'PARENT':
             parent = ParentProfile.objects.get(user=user)
             if not parent.children.filter(pk=student.pk).exists():
                 return Response(status=status.HTTP_403_FORBIDDEN)
-        # Collect data
-        submissions = Submission.objects.filter(student=student, grade__isnull=False).order_by('submitted_at')
-        grades_series = [{'date': s.submitted_at.strftime('%Y-%m-%d'), 'grade': float(s.grade)} for s in submissions]
-        # attendance last 30 days
+        submissions = Submission.objects.filter(
+            student=student, grade__isnull=False
+        ).order_by('submitted_at')
+        grades_series = [{
+            'date': s.submitted_at.strftime('%Y-%m-%d'),
+            'grade': float(s.grade)
+        } for s in submissions]
         today = timezone.now().date()
         thirty_days_ago = today - timedelta(days=30)
         attendances = Attendance.objects.filter(student=student, date__gte=thirty_days_ago)
         present_count = attendances.filter(status='present').count()
         attendance_rate = (present_count / attendances.count() * 100) if attendances.count() > 0 else 100.0
-        # latest risk assessment
         latest_risk = RiskAssessment.objects.filter(student=student).order_by('-assessed_at').first()
         risk_score = latest_risk.risk_score if latest_risk else None
         return Response({
@@ -601,37 +697,43 @@ class AnalyticsViewSet(viewsets.GenericViewSet):
 
     @action(detail=True, methods=['get'], url_path='teacher-effectiveness/(?P<teacher_id>[^/.]+)')
     def teacher_effectiveness(self, request, teacher_id=None):
-        """Admin: avg student grades across all classes of a teacher."""
         if request.user.role != 'ADMIN':
             return Response(status=status.HTTP_403_FORBIDDEN)
         teacher = get_object_or_404(TeacherProfile, pk=teacher_id)
         classes = Class.objects.filter(teacher=teacher)
-        overall_avg = Submission.objects.filter(assignment__class_obj__in=classes, grade__isnull=False).aggregate(Avg('grade'))['grade__avg']
+        overall_avg = Submission.objects.filter(
+            assignment__class_obj__in=classes, grade__isnull=False
+        ).aggregate(Avg('grade'))['grade__avg']
+        total_students = StudentProfile.objects.filter(
+            enrollments__class_obj__in=classes
+        ).distinct().count()
         return Response({
             'teacher': teacher.user.get_full_name(),
             'overall_average_grade': round(overall_avg, 2) if overall_avg else None,
-            'total_students': StudentProfile.objects.filter(enrollments__class_obj__in=classes).distinct().count()
+            'total_students': total_students
         })
+
+
+# ---------- REPORTS ----------
+
 class ReportViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     @action(detail=False, methods=['post'])
     def generate(self, request):
-        report_type = request.data.get('report_type')  # 'class_performance', 'student_progress', 'attendance'
-        format = request.data.get('format', 'pdf')     # pdf, excel, csv
+        report_type = request.data.get('report_type')
+        format = request.data.get('format', 'pdf')
         class_id = request.data.get('class_id')
         student_id = request.data.get('student_id')
-        
+
         if report_type == 'class_performance' and class_id:
             class_obj = get_object_or_404(Class, pk=class_id)
-            # Permission: teacher of the class or admin
             if request.user.role == 'TEACHER':
                 teacher = TeacherProfile.objects.get(user=request.user)
                 if class_obj.teacher != teacher:
                     return Response(status=status.HTTP_403_FORBIDDEN)
             elif request.user.role != 'ADMIN':
                 return Response(status=status.HTTP_403_FORBIDDEN)
-            # Get data
             enrollments = class_obj.enrollments.all()
             rows = []
             for enr in enrollments:
@@ -648,18 +750,32 @@ class ReportViewSet(viewsets.GenericViewSet):
 
         elif report_type == 'student_progress' and student_id:
             student = get_object_or_404(StudentProfile, pk=student_id)
-            # Permission as before
-            # ... same checks as student_progress analytics
-            submissions = Submission.objects.filter(student=student, grade__isnull=False).order_by('submitted_at')
-            rows = [{'date': s.submitted_at.strftime('%Y-%m-%d'), 'grade': float(s.grade)} for s in submissions]
+            user = request.user
+            if user.role == 'STUDENT' and student.user != user:
+                return Response(status=status.HTTP_403_FORBIDDEN)
+            if user.role == 'PARENT':
+                parent = ParentProfile.objects.get(user=user)
+                if not parent.children.filter(pk=student.pk).exists():
+                    return Response(status=status.HTTP_403_FORBIDDEN)
+            submissions = Submission.objects.filter(
+                student=student, grade__isnull=False
+            ).order_by('submitted_at')
+            rows = [{
+                'date': s.submitted_at.strftime('%Y-%m-%d'),
+                'grade': float(s.grade)
+            } for s in submissions]
             filename = f"student_{student_id}_progress"
             return self._generate_report(format, filename, ['Date', 'Grade'], rows)
 
         elif report_type == 'attendance' and class_id:
             class_obj = get_object_or_404(Class, pk=class_id)
-            # Permission check
+            if request.user.role == 'TEACHER':
+                teacher = TeacherProfile.objects.get(user=request.user)
+                if class_obj.teacher != teacher:
+                    return Response(status=status.HTTP_403_FORBIDDEN)
+            elif request.user.role != 'ADMIN':
+                return Response(status=status.HTTP_403_FORBIDDEN)
             attendances = Attendance.objects.filter(class_obj=class_obj).order_by('date')
-            # Group by student? We'll do a simple list of all attendance records
             rows = [{
                 'student': a.student.user.get_full_name(),
                 'date': a.date.strftime('%Y-%m-%d'),
@@ -685,18 +801,16 @@ class ReportViewSet(viewsets.GenericViewSet):
         buffer = io.BytesIO()
         p = canvas.Canvas(buffer, pagesize=letter)
         p.setTitle(filename)
-        # Write headers
         p.setFont("Helvetica-Bold", 10)
         y = 750
         x_offset = 50
         for i, header in enumerate(headers):
-            p.drawString(x_offset + i*150, y, header)
-        # Write rows
+            p.drawString(x_offset + i * 150, y, header)
         p.setFont("Helvetica", 10)
         y -= 20
         for row in rows:
             for i, value in enumerate(row.values()):
-                p.drawString(x_offset + i*150, y, str(value))
+                p.drawString(x_offset + i * 150, y, str(value))
             y -= 15
             if y < 50:
                 p.showPage()
@@ -718,7 +832,8 @@ class ReportViewSet(viewsets.GenericViewSet):
         buffer = io.BytesIO()
         wb.save(buffer)
         buffer.seek(0)
-        response = HttpResponse(buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response = HttpResponse(buffer,
+                                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response['Content-Disposition'] = f'attachment; filename="{filename}.xlsx"'
         return response
 
@@ -732,3 +847,21 @@ class ReportViewSet(viewsets.GenericViewSet):
         response = HttpResponse(buffer.getvalue(), content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
         return response
+
+
+# ---------- STUDENT ME (simple endpoint) ----------
+
+class StudentMeView(generics.RetrieveAPIView):
+    serializer_class = StudentProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return StudentProfile.objects.get(user=self.request.user)
+
+class TeacherMeView(generics.RetrieveAPIView):
+    serializer_class = TeacherProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return TeacherProfile.objects.get(user=self.request.user)
+

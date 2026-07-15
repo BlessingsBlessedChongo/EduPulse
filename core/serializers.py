@@ -37,10 +37,12 @@ class ParentProfileSerializer(serializers.ModelSerializer):
 # ---------- Class ----------
 
 class ClassSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.CharField(source='teacher.user.get_full_name', read_only=True)
+    enrollment_count = serializers.IntegerField(source='enrollments.count', read_only=True)
+
     class Meta:
         model = Class
         fields = '__all__'
-        # teacher field will be handled by the view (only admin/teacher can set)
 
 class EnrollmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -50,6 +52,7 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 # ---------- Assignment ----------
 
 class AssignmentSerializer(serializers.ModelSerializer):
+    class_obj_name = serializers.CharField(source='class_obj.name', read_only=True)
     class Meta:
         model = Assignment
         fields = '__all__'
@@ -61,16 +64,13 @@ class AssignmentSerializer(serializers.ModelSerializer):
 # ---------- Submission ----------
 
 class SubmissionSerializer(serializers.ModelSerializer):
-    student_email = serializers.EmailField(source='student.user.email', read_only=True)
+    student_name = serializers.CharField(source='student.user.get_full_name', read_only=True)
+    assignment_title = serializers.CharField(source='assignment.title', read_only=True)
 
     class Meta:
         model = Submission
         fields = '__all__'
         read_only_fields = ('student', 'submitted_at', 'is_late')
-
-    def validate(self, data):
-        # Check deadline and mark late automatically (will do in view or model)
-        return data
 
 # ---------- Attendance ----------
 

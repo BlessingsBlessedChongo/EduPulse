@@ -11,8 +11,15 @@ import AdminDashboard from './pages/AdminDashboard';
 import ParentDashboard from './pages/ParentDashboard';
 import NotFound from './pages/NotFound';
 import Landing from './pages/Landing';
+
+// Import these when you create the actual files
+// import ClassManagement from './pages/ClassManagement';
+// import UserManagement from './pages/UserManagement';
+// import AssignmentManagement from './pages/AssignmentManagement';
+
 function AppRoutes() {
   const user = useSelector((state) => state.auth.user);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -22,11 +29,45 @@ function AppRoutes() {
           <Route path="/login" element={!user ? <Login /> : <Navigate to={`/${user.role.toLowerCase()}`} />} />
           <Route path="/register" element={!user ? <Register /> : <Navigate to={`/${user.role.toLowerCase()}`} />} />
 
-          {/* Protected role dashboards */}
-          <Route path="/student/*" element={<ProtectedRoute roles={['STUDENT']}><StudentDashboard /></ProtectedRoute>} />
-          <Route path="/teacher/*" element={<ProtectedRoute roles={['TEACHER']}><TeacherDashboard /></ProtectedRoute>} />
-          <Route path="/admin/*" element={<ProtectedRoute roles={['ADMIN']}><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/parent/*" element={<ProtectedRoute roles={['PARENT']}><ParentDashboard /></ProtectedRoute>} />
+          {/* Student Dashboard */}
+          <Route path="/student/*" element={
+            <ProtectedRoute roles={['STUDENT']}>
+              <StudentDashboard />
+            </ProtectedRoute>
+          } />
+
+          {/* Teacher Dashboard with nested routes */}
+          <Route path="/teacher/*" element={
+            <ProtectedRoute roles={['TEACHER']}>
+              <Routes>
+                <Route index element={<TeacherDashboard />} />
+                {/* Uncomment when page exists:
+                <Route path="classes" element={<ClassManagement />} />
+                <Route path="assignments" element={<AssignmentManagement />} />
+                */}
+              </Routes>
+            </ProtectedRoute>
+          } />
+
+          {/* Admin Dashboard with nested routes */}
+          <Route path="/admin/*" element={
+            <ProtectedRoute roles={['ADMIN']}>
+              <Routes>
+                <Route index element={<AdminDashboard />} />
+                {/* Uncomment when pages exist:
+                <Route path="classes" element={<ClassManagement />} />
+                <Route path="users" element={<UserManagement />} />
+                */}
+              </Routes>
+            </ProtectedRoute>
+          } />
+
+          {/* Parent Dashboard */}
+          <Route path="/parent/*" element={
+            <ProtectedRoute roles={['PARENT']}>
+              <ParentDashboard />
+            </ProtectedRoute>
+          } />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
