@@ -12,10 +12,15 @@ import ParentDashboard from './pages/ParentDashboard';
 import NotFound from './pages/NotFound';
 import Landing from './pages/Landing';
 
-// Import these when you create the actual files
-// import ClassManagement from './pages/ClassManagement';
-// import UserManagement from './pages/UserManagement';
-// import AssignmentManagement from './pages/AssignmentManagement';
+// Page imports – uncomment as you create the files
+import ClassManagement from './pages/ClassManagement';
+import UserManagement from './pages/UserManagement';
+import AssignmentManagement from './pages/AssignmentManagement';
+import GradingPage from './pages/GradingPage';
+import StudentAssignments from './pages/StudentAssignments';
+import Messages from './pages/Messages';
+import NotificationsPage from './pages/NotificationsPage';
+import AITools from './pages/AITools';
 
 function AppRoutes() {
   const user = useSelector((state) => state.auth.user);
@@ -29,10 +34,16 @@ function AppRoutes() {
           <Route path="/login" element={!user ? <Login /> : <Navigate to={`/${user.role.toLowerCase()}`} />} />
           <Route path="/register" element={!user ? <Register /> : <Navigate to={`/${user.role.toLowerCase()}`} />} />
 
-          {/* Student Dashboard */}
+          {/* Student Dashboard with nested routes */}
           <Route path="/student/*" element={
             <ProtectedRoute roles={['STUDENT']}>
-              <StudentDashboard />
+              <Routes>
+                <Route index element={<StudentDashboard />} />
+                <Route path="assignments" element={<StudentAssignments />} />
+                <Route path="messages" element={<Messages />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="ai-tools" element={<AITools />} />
+              </Routes>
             </ProtectedRoute>
           } />
 
@@ -41,10 +52,12 @@ function AppRoutes() {
             <ProtectedRoute roles={['TEACHER']}>
               <Routes>
                 <Route index element={<TeacherDashboard />} />
-                {/* Uncomment when page exists:
                 <Route path="classes" element={<ClassManagement />} />
                 <Route path="assignments" element={<AssignmentManagement />} />
-                */}
+                <Route path="submissions/:assignmentId" element={<GradingPage />} />
+                <Route path="messages" element={<Messages />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="ai-tools" element={<AITools />} />
               </Routes>
             </ProtectedRoute>
           } />
@@ -54,18 +67,23 @@ function AppRoutes() {
             <ProtectedRoute roles={['ADMIN']}>
               <Routes>
                 <Route index element={<AdminDashboard />} />
-                {/* Uncomment when pages exist:
                 <Route path="classes" element={<ClassManagement />} />
                 <Route path="users" element={<UserManagement />} />
-                */}
+                <Route path="messages" element={<Messages />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="ai-tools" element={<AITools />} />
               </Routes>
             </ProtectedRoute>
           } />
 
-          {/* Parent Dashboard */}
+          {/* Parent Dashboard with nested routes */}
           <Route path="/parent/*" element={
             <ProtectedRoute roles={['PARENT']}>
-              <ParentDashboard />
+              <Routes>
+                <Route index element={<ParentDashboard />} />
+                <Route path="messages" element={<Messages />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+              </Routes>
             </ProtectedRoute>
           } />
 

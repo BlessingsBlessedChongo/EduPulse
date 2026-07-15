@@ -282,12 +282,19 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         user = self.request.user
         class_id = self.request.query_params.get('class_id')
         upcoming = self.request.query_params.get('upcoming')
+        my = self.request.query_params.get('my')
 
         if class_id:
             qs = qs.filter(class_obj_id=class_id)
 
-        if user.role == 'STUDENT':
-            # Only assignments for classes the student is enrolled in
+        if user.role == 'TEACHER':
+            teacher = TeacherProfile.objects.get(user=user)
+            if my == 'true':
+                qs = qs.filter(class_obj__teacher=teacher)
+            elif class_id:
+                # ensure teacher owns the class if class_id is given
+                qs = qs.filter(class_obj__teacher=teacher, class_obj_id=class_id)
+        elif user.role == 'STUDENT':
             student = StudentProfile.objects.get(user=user)
             qs = qs.filter(class_obj__enrollments__student=student)
 
@@ -363,6 +370,21 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         ).select_related('student', 'assignment')
         serializer = self.get_serializer(pending_subs, many=True)
         return Response(serializer.data)
+    
+    def get_queryset(self):
+        qs = Submission.objects.all()
+        assignment_id = self.request.query_params.get('assignment_id')
+        if assignment_id:
+            qs = qs.filter(assignment_id=assignment_id)
+
+        user = self.request.user
+        if user.role == 'STUDENT':
+            student = StudentProfile.objects.get(user=user)
+            qs = qs.filter(student=student)
+        elif user.role == 'TEACHER':
+            teacher = TeacherProfile.objects.get(user=user)
+            qs = qs.filter(assignment__class_obj__teacher=teacher)
+        return qs
 
 
 # ---------- ATTENDANCE ----------
@@ -422,6 +444,12 @@ class MessageViewSet(viewsets.ModelViewSet):
         return [perm() for perm in permission_classes]
 
     def perform_create(self, serializer):
+        receiver_email = self.request.data.get('receiver_email')
+        if receiver_email:
+            receiver = get_object_or_404(User, email=receiver_email)
+            serializer.save(sender=self.request.user, receiver=receiver)
+        else:
+            serializer.save(sender=self.request.user)
         message = serializer.save(sender=self.request.user)
         # In-app notification
         Notification.objects.create(

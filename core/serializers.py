@@ -53,9 +53,18 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 
 class AssignmentSerializer(serializers.ModelSerializer):
     class_obj_name = serializers.CharField(source='class_obj.name', read_only=True)
+    submission_count = serializers.IntegerField(source='submissions.count', read_only=True)
+    has_submitted = serializers.SerializerMethodField()
+
+    def get_has_submitted(self, obj):
+        request = self.context.get('request')
+        if request and request.user.role == 'STUDENT':
+            student = StudentProfile.objects.get(user=request.user)
+            return Submission.objects.filter(assignment=obj, student=student).exists()
+        return False
     class Meta:
-        model = Assignment
-        fields = '__all__'
+            model = Assignment
+            fields = '__all__'
 
     def validate(self, data):
         # Ensure the teacher of the assignment matches the class teacher? (We'll handle in view)
