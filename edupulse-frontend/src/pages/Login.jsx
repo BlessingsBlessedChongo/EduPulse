@@ -38,7 +38,7 @@ export default function Login() {
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, var(--primary-500) 0%, var(--accent-500) 100%)',
+        background: 'linear-gradient(135deg, #173b75 0%, #009ca6 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -48,18 +48,17 @@ export default function Login() {
       <Container maxWidth="sm">
         <Card
           sx={{
-            borderRadius: '16px',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+            borderRadius: '24px',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
             p: { xs: 3, sm: 5 },
-            background: 'var(--surface)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            background: '#ffffff',
+            border: 'none',
           }}
         >
           {/* Header */}
           <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Box sx={{ mb: 3 }}>
-              <img src="/assets/logo.png" alt="EduPulse Logo" style={{ height: '80px', objectFit: 'contain' }} />
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <img src="/assets/logo.png" alt="EduPulse Logo" style={{ height: '80px', objectFit: 'contain', width: 'auto' }} />
             </Box>
             <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
               Welcome Back
@@ -130,14 +129,14 @@ export default function Login() {
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: '8px',
-                      background: 'var(--surface-alt)',
+                      background: '#f3f4f6',
                       transition: 'all 300ms',
                       '&:hover fieldset': {
-                        borderColor: '#3b5bde',
+                        borderColor: '#009ca6',
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#3b5bde',
-                        boxShadow: '0 0 0 3px rgba(59, 91, 222, 0.1)',
+                        borderColor: '#009ca6',
+                        boxShadow: '0 0 0 3px rgba(0, 156, 166, 0.1)',
                       },
                     },
                   }}
@@ -160,15 +159,15 @@ export default function Login() {
               sx={{
                 mt: 3,
                 py: 1.5,
-                background: 'linear-gradient(135deg, #3b5bde 0%, #5b4ef7 100%)',
+                background: 'linear-gradient(135deg, #173b75 0%, #009ca6 100%)',
                 color: 'white',
                 fontWeight: 700,
                 fontSize: '1rem',
-                borderRadius: '8px',
-                boxShadow: '0 10px 25px rgba(59, 91, 222, 0.2)',
+                borderRadius: '12px',
+                boxShadow: '0 10px 25px rgba(23, 59, 117, 0.2)',
                 textTransform: 'none',
                 '&:hover': {
-                  boxShadow: '0 15px 35px rgba(59, 91, 222, 0.3)',
+                  boxShadow: '0 15px 35px rgba(0, 156, 166, 0.3)',
                   transform: 'translateY(-2px)',
                 },
                 '&:disabled': {

@@ -65,7 +65,7 @@ export default function Register() {
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, var(--primary-500) 0%, var(--accent-500) 100%)',
+        background: 'linear-gradient(135deg, #173b75 0%, #009ca6 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -75,18 +75,17 @@ export default function Register() {
       <Container maxWidth="sm">
         <Card
           sx={{
-            borderRadius: '16px',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+            borderRadius: '24px',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
             p: { xs: 3, sm: 5 },
-            background: 'var(--surface)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            background: '#ffffff',
+            border: 'none',
           }}
         >
           {/* Header */}
           <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Box sx={{ mb: 3 }}>
-              <img src="/assets/logo.png" alt="EduPulse Logo" style={{ height: '80px', objectFit: 'contain' }} />
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <img src="/assets/logo.png" alt="EduPulse Logo" style={{ height: '80px', objectFit: 'contain', width: 'auto' }} />
             </Box>
             <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
               Create Your Account
@@ -104,6 +103,15 @@ export default function Register() {
                   '& .MuiStepLabel-label': {
                     fontSize: '0.875rem',
                     fontWeight: activeStep === index ? 600 : 500,
+                  },
+                  '& .MuiStepIcon-root': {
+                    color: index <= activeStep ? '#009ca6' : '#d1d5db',
+                  },
+                  '& .MuiStepIcon-root.Mui-active': {
+                    color: '#009ca6',
+                  },
+                  '& .MuiStepIcon-root.Mui-completed': {
+                    color: '#009ca6',
                   },
                 }}>
                   {label}
