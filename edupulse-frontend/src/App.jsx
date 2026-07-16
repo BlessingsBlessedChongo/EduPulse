@@ -1,94 +1,26 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import Layout from './components/Layout';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Landing from './pages/Landing';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import StudentDashboard from './pages/StudentDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import ParentDashboard from './pages/ParentDashboard';
-import NotFound from './pages/NotFound';
-import Landing from './pages/Landing';
-
-// Page imports – uncomment as you create the files
-import ClassManagement from './pages/ClassManagement';
-import UserManagement from './pages/UserManagement';
-import AssignmentManagement from './pages/AssignmentManagement';
-import GradingPage from './pages/GradingPage';
-import StudentAssignments from './pages/StudentAssignments';
-import Messages from './pages/Messages';
-import Notifications from './pages/Notifications';
-import AITools from './pages/AITools';
 
 function AppRoutes() {
-  const user = useSelector((state) => state.auth.user);
-
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<Layout />}>
-          {/* Public routes */}
-          <Route path="/" element={!user ? <Landing /> : <Navigate to={`/${user.role.toLowerCase()}`} />} />
-          <Route path="/login" element={!user ? <Login /> : <Navigate to={`/${user.role.toLowerCase()}`} />} />
-          <Route path="/register" element={!user ? <Register /> : <Navigate to={`/${user.role.toLowerCase()}`} />} />
-
-          {/* Student Dashboard with nested routes */}
-          <Route path="/student/*" element={
-            <ProtectedRoute roles={['STUDENT']}>
-              <Routes>
-                <Route index element={<StudentDashboard />} />
-                <Route path="assignments" element={<StudentAssignments />} />
-                <Route path="messages" element={<Messages />} />
-                <Route path="notifications" element={<Notifications />} />
-                <Route path="ai-tools" element={<AITools />} />
-              </Routes>
-            </ProtectedRoute>
-          } />
-
-          {/* Teacher Dashboard with nested routes */}
-          <Route path="/teacher/*" element={
-            <ProtectedRoute roles={['TEACHER']}>
-              <Routes>
-                <Route index element={<TeacherDashboard />} />
-                <Route path="classes" element={<ClassManagement />} />
-                <Route path="assignments" element={<AssignmentManagement />} />
-                <Route path="submissions/:assignmentId" element={<GradingPage />} />
-                <Route path="messages" element={<Messages />} />
-                <Route path="notifications" element={<Notifications />} />
-                <Route path="ai-tools" element={<AITools />} />
-              </Routes>
-            </ProtectedRoute>
-          } />
-
-          {/* Admin Dashboard with nested routes */}
-          <Route path="/admin/*" element={
-            <ProtectedRoute roles={['ADMIN']}>
-              <Routes>
-                <Route index element={<AdminDashboard />} />
-                <Route path="classes" element={<ClassManagement />} />
-                <Route path="users" element={<UserManagement />} />
-                <Route path="messages" element={<Messages />} />
-                <Route path="notifications" element={<Notifications />} />
-                <Route path="ai-tools" element={<AITools />} />
-              </Routes>
-            </ProtectedRoute>
-          } />
-
-          {/* Parent Dashboard with nested routes */}
-          <Route path="/parent/*" element={
-            <ProtectedRoute roles={['PARENT']}>
-              <Routes>
-                <Route index element={<ParentDashboard />} />
-                <Route path="messages" element={<Messages />} />
-                <Route path="notifications" element={<Notifications />} />
-              </Routes>
-            </ProtectedRoute>
-          } />
-
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Route>
+        {/* Public Routes */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        
+        {/* Dashboard Routes */}
+        <Route path="/student" element={<StudentDashboard />} />
+        <Route path="/teacher" element={<TeacherDashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/parent" element={<ParentDashboard />} />
       </Routes>
     </BrowserRouter>
   );
