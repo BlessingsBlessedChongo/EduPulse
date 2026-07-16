@@ -19,7 +19,7 @@ import AssignmentManagement from './pages/AssignmentManagement';
 import GradingPage from './pages/GradingPage';
 import StudentAssignments from './pages/StudentAssignments';
 import Messages from './pages/Messages';
-import NotificationsPage from './pages/NotificationsPage';
+import Notifications from './pages/Notifications';
 import AITools from './pages/AITools';
 
 function AppRoutes() {
@@ -41,7 +41,7 @@ function AppRoutes() {
                 <Route index element={<StudentDashboard />} />
                 <Route path="assignments" element={<StudentAssignments />} />
                 <Route path="messages" element={<Messages />} />
-                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="notifications" element={<Notifications />} />
                 <Route path="ai-tools" element={<AITools />} />
               </Routes>
             </ProtectedRoute>
@@ -56,7 +56,7 @@ function AppRoutes() {
                 <Route path="assignments" element={<AssignmentManagement />} />
                 <Route path="submissions/:assignmentId" element={<GradingPage />} />
                 <Route path="messages" element={<Messages />} />
-                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="notifications" element={<Notifications />} />
                 <Route path="ai-tools" element={<AITools />} />
               </Routes>
             </ProtectedRoute>
@@ -70,7 +70,7 @@ function AppRoutes() {
                 <Route path="classes" element={<ClassManagement />} />
                 <Route path="users" element={<UserManagement />} />
                 <Route path="messages" element={<Messages />} />
-                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="notifications" element={<Notifications />} />
                 <Route path="ai-tools" element={<AITools />} />
               </Routes>
             </ProtectedRoute>
@@ -82,7 +82,7 @@ function AppRoutes() {
               <Routes>
                 <Route index element={<ParentDashboard />} />
                 <Route path="messages" element={<Messages />} />
-                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="notifications" element={<Notifications />} />
               </Routes>
             </ProtectedRoute>
           } />
