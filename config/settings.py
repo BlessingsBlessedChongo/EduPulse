@@ -27,6 +27,9 @@ SECRET_KEY = 'django-insecure-j++z8&s#g(iz98@7ygzt@_6@b51q5l0m&mva6prl^y18mw37_(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# Allows Vercel frontends, PythonAnywhere, and local hosts to reach this backend securely
+ALLOWED_HOSTS = ['*']
+
 # CORS (allow React dev server)
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -47,7 +50,6 @@ INSTALLED_APPS = [
     # Local
     'accounts',
     'core.apps.CoreConfig',
-
 ]
 
 MIDDLEWARE = [
@@ -126,9 +128,11 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': False,
 }
+
 # Media files (for later use)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
