@@ -11,8 +11,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <BookOpen className="w-6 h-6 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-900">EduPulse</span>
+            <img src="/assets/logo.png" alt="EduPulse Logo" className="h-10 object-contain" />
           </div>
 
           {/* Right-aligned buttons */}

@@ -58,20 +58,8 @@ export default function Login() {
         >
           {/* Header */}
           <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 2 }}>
-              <SchoolIcon sx={{ fontSize: '40px', color: '#3b5bde' }} />
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 700,
-                  background: 'linear-gradient(135deg, #3b5bde 0%, #5b4ef7 100%)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                EduPulse
-              </Typography>
+            <Box sx={{ mb: 3 }}>
+              <img src="/assets/logo.png" alt="EduPulse Logo" style={{ height: '80px', objectFit: 'contain' }} />
             </Box>
             <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
               Welcome Back

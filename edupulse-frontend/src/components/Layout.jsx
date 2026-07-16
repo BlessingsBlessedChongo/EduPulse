@@ -82,10 +82,7 @@ export default function Layout() {
       {/* Drawer Header */}
       <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SchoolIcon sx={{ fontSize: '28px', color: '#3b5bde' }} />
-          <Typography variant="h6" sx={{ fontWeight: 700, background: 'linear-gradient(135deg, #3b5bde 0%, #5b4ef7 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            EduPulse
-          </Typography>
+          <img src="/assets/logo.png" alt="EduPulse Logo" style={{ height: '40px', objectFit: 'contain' }} />
         </Box>
         {isMobile && (
           <IconButton onClick={() => setMobileOpen(false)} size="small">
