@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import {
   Container, Grid, Card, CardContent, Typography, CircularProgress,
-  List, ListItem, ListItemText, Chip, Button, Box, Accordion, AccordionSummary, AccordionDetails
+  List, ListItem, ListItemText, Chip, Button, Box, Accordion, AccordionSummary, AccordionDetails, LinearProgress
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { getMyChildren, getChildProgress, getChildAttendance } from '../api/parentApi';
-import { useAuth } from '../hooks/useAuth';
+import { useSelector } from 'react-redux';
+import PersonIcon from '@mui/icons-material/Person';
+import SchoolIcon from '@mui/icons-material/School';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
 export default function ParentDashboard() {
-  const { user } = useAuth();
+  const user = useSelector((state) => state.auth.user);
   const [children, setChildren] = useState([]);
   const [selectedChildId, setSelectedChildId] = useState(null);
   const [childProgress, setChildProgress] = useState(null);

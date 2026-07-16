@@ -1,6 +1,7 @@
 import API from './axios';
 
 export const getClasses = (params = {}) => API.get('/classes/', { params });
+export const getMyClasses = () => API.get('/classes/?my=true');
 export const getClass = (id) => API.get(`/classes/${id}/`);
 export const createClass = (data) => API.post('/classes/', data);
 export const updateClass = (id, data) => API.put(`/classes/${id}/`, data);

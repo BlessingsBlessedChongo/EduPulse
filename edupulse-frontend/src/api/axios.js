@@ -18,12 +18,12 @@ API.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       const refresh = localStorage.getItem('refresh_token');
       if (refresh) {
         try {
-          const { data } = await axios.post('http://localhost:8000/api/auth/token/refresh/', {
+          const { data } = await axios.post('https://edupulsesms.pythonanywhere.com/api/auth/token/refresh/', {
             refresh,
           });
           localStorage.setItem('access_token', data.access);

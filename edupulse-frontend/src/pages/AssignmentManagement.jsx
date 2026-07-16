@@ -6,7 +6,8 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { getMyAssignments, createAssignment, getMyClasses } from '../api/assignmentApi'; // getMyClasses from classApi.js
+import { getMyAssignments, createAssignment } from '../api/assignmentApi';
+import { getMyClasses } from '../api/classApi';
 import { Link } from 'react-router-dom';
 
 export default function AssignmentManagement() {
