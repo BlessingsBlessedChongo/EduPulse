@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:8000/api',  // change to your Django backend URL
+   baseURL: 'https://edupulsesms.pythonanywhere.com/api',  // change to your Django backend URL
 });
 
 // Attach token to every request
