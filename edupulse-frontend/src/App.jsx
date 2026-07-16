@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Provider, useSelector } from 'react-redux';
-import { store } from './store/store';
+import { useSelector } from 'react-redux';
 import Layout from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Login from './pages/Login';
@@ -96,9 +95,5 @@ function AppRoutes() {
 }
 
 export default function App() {
-  return (
-    <Provider store={store}>
-      <AppRoutes />
-    </Provider>
-  );
+  return <AppRoutes />;
 }
