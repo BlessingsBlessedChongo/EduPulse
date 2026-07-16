@@ -28,11 +28,7 @@ SECRET_KEY = 'django-insecure-j++z8&s#g(iz98@7ygzt@_6@b51q5l0m&mva6prl^y18mw37_(
 DEBUG = True
 
 # CORS (allow React dev server)
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",   # Vite default
-    "http://localhost:3000",
-       "edupulsesms.pythonanywhere.com",   
-]
+CORS_ALLOW_ALL_ORIGINS = True
 
 
 # Application definition
