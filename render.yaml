@@ -1,0 +1,22 @@
+# Render blueprint: one free web service built from the Dockerfile.
+# The database is a free Neon PostgreSQL; paste its connection string into
+# EDUPULSE_DB when the service is first created. Either form is accepted,
+# including the postgresql://... line exactly as Neon shows it.
+services:
+  - type: web
+    name: edupulse
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: EDUPULSE_DB
+        sync: false
+      - key: EDUPULSE_SECRET
+        generateValue: true
+      # Optional. Without them EduPulse works by rules alone.
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false

@@ -1,0 +1,13 @@
+.git
+.github
+.devdb
+.env
+.env.*
+docs
+scripts
+**/bin
+**/obj
+**/node_modules
+server/EduPulse.Api/wwwroot
+server/EduPulse.Tests
+server/EduPulse.Evals

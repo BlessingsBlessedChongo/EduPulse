@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: edupulse
+          POSTGRES_PASSWORD: edupulse
+          POSTGRES_DB: edupulse_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U edupulse"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build the web app (includes the type check)
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Run the tests against a real PostgreSQL
+        working-directory: server
+        env:
+          EDUPULSE_TEST_DB: Host=localhost;Port=5432;Database=edupulse_test;Username=edupulse;Password=edupulse
+        run: dotnet test EduPulse.Tests --nologo
+
+  docker:
+    name: Build the Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t edupulse .

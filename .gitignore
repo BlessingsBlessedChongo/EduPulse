@@ -1,21 +1,23 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-venv/
+# Secrets and local settings
 .env
-db.sqlite3
+.env.*
+!.env.example
 
-# JavaScript / React
+# The private development database
+.devdb/
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# The web app: packages, and the build that the server serves
 node_modules/
-dist/
-.env.local
-.env.production
+server/EduPulse.Api/wwwroot/
 
-# IDEs
+# Editors and systems
 .vscode/
 .idea/
-
-# System
 .DS_Store
 Thumbs.db
