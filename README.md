@@ -9,6 +9,8 @@ question back just before it would be forgotten.
 
 Built with C# and ASP.NET Core 9, PostgreSQL, React and TypeScript.
 
+**Try it live: <https://edupulse-phf2.onrender.com>** and press *Try the demo*. It runs on free hosting, so the first visit after a quiet spell can take a minute to wake.
+
 ![Today's set, the pulse and the topics that need attention](docs/today.png)
 
 > **The idea in one line:** the AI proposes, and rules decide. A question is
